@@ -1,6 +1,7 @@
 package com.example.assignment2;
 
 import android.content.Context;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
@@ -35,5 +36,15 @@ public class SQLiteManager extends SQLiteOpenHelper {
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
 
+    }
+
+    public Cursor getLatLongForAddress(String address) {
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        String[] projection = {"latitude", "longitude"};
+        String selection = "address=?";
+        String[] selectionArgs = {address};
+
+        return db.query("my_table", projection, selection, selectionArgs, null, null, null);
     }
 }

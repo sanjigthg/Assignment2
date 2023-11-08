@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Assignment2</string>
+    <string name="get_address">Get Address</string>
+    <string name="address">Address</string>
 </resources>
