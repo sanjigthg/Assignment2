@@ -53,7 +53,9 @@ public class MainActivity extends AppCompatActivity {
         }
         displayDatabaseValues();
     }
-
+    // Geocoder functionality in order to convert the latitude and longitude pairs
+    // which provides the equivalent address value thats returned back into the
+    // readAndInsertDataFromAssets in order to insert the required values.
     private String getAddressFromCoordinates (Context context, double latitude, double longitude) {
         Geocoder geocoder = new Geocoder(context, Locale.getDefault());
         String addressValue = "";
@@ -73,6 +75,9 @@ public class MainActivity extends AppCompatActivity {
         }
         return addressValue;
     }
+    // Function in order to obtain values from the coordinates.txt file
+    // Converts the contents of the file using the inputstream and splitting the data
+    // into the seperate variables, latitude and longitude which are placed into the DB.
     private void readAndInsertDataFromAssets () throws IOException {
             AssetManager assetManager = getAssets();
             InputStream inputStream = assetManager.open("coordinates.txt");
@@ -100,7 +105,9 @@ public class MainActivity extends AppCompatActivity {
             db.close();
             bufferedReader.close();
         }
-
+    // Function designed to search the database for the entered value from the user
+    // Error checks if the address is in the database or not, prompts with a message
+    // upon one of the conditions that are met.
     @SuppressLint("SetTextI18n")
     public void onSearchButtonClick(View view) {
         String userEnteredAddress = addressInput.getText().toString().trim();
@@ -125,6 +132,9 @@ public class MainActivity extends AppCompatActivity {
         displayDatabaseValues();
     }
 
+    // This function displays the database values at all times, and is used in the other functions
+    // to update the immediate changes that are being done (add, delete or update)
+    // It is formatted using the Adapter class and the listview layout to display the values accordingly
     private void displayDatabaseValues() {
         SQLiteDatabase db = sqLiteManager.getReadableDatabase();
         Cursor cursor = db.query("Location", null, null, null, null, null, null);
@@ -147,6 +157,9 @@ public class MainActivity extends AppCompatActivity {
         listView.setAdapter(locationAdapter);
     }
 
+    // Allows the user to enter the address they want to input into the database, with base values
+    // of 0 and 0 for the latitude and longitude.
+    // Once the address has been added, the user can continue with the other functionality.
     public void onAddAddressButtonClick(View view) {
         String userEnteredAddress = addressInput.getText().toString().trim();
 
@@ -166,6 +179,10 @@ public class MainActivity extends AppCompatActivity {
         displayDatabaseValues();
     }
 
+    // Deletes the requested address that user puts into the EditText line. Confirmation is given upon
+    // any of the if/else statements.
+    // In order to reflect the change right away, the database display is updated right away after this function
+    // is called.
     public void onDeleteButtonClick(View view) {
         String userEnteredDeleteAddress = addressInput.getText().toString().trim();
 
@@ -183,6 +200,8 @@ public class MainActivity extends AppCompatActivity {
         displayDatabaseValues();
     }
 
+    // Updates the address value to obtain the latitude and longitude values using forward geocoding
+    // Upon successful update, you can use the Get Address button to look at the new latitude and longitude
     public void onUpdateButtonClick(View view) {
         String userEnteredUpdateAddress = addressInput.getText().toString().trim();
 
@@ -196,7 +215,6 @@ public class MainActivity extends AppCompatActivity {
                     latitude = addresses.get(0).getLatitude();
                     longitude = addresses.get(0).getLongitude();
 
-                    // Update the address with latitude and longitude in the database
                     int updatedRows = sqLiteManager.updateAddress(userEnteredUpdateAddress, latitude, longitude);
 
                     if (updatedRows > 0) {
@@ -215,8 +233,4 @@ public class MainActivity extends AppCompatActivity {
         }
         displayDatabaseValues();
     }
-    // Nuke db cause I was mad
-   /* public void nukeDB(View view) {
-        sqLiteManager.clearAllAddresses();
-    }*/
 }

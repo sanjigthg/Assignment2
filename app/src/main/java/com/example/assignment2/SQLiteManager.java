@@ -38,6 +38,9 @@ public class SQLiteManager extends SQLiteOpenHelper {
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
 
     }
+    // Obtains the database value for the address by searching the database and providing the
+    // latitude and longitude value into the function that it is being called to, which in this case
+    // is the onSearchButtonClick().
     public Cursor getLatLongForAddress(String address) {
         SQLiteDatabase db = this.getReadableDatabase();
 
@@ -47,7 +50,8 @@ public class SQLiteManager extends SQLiteOpenHelper {
 
         return db.query("Location", projection, selection, selectionArgs, null, null, null);
     }
-
+    // Corresponds to the onAddAddressButtonClick and obtains the address value from the function
+    // which stores into the database.
     public long addAddress(String userEnteredAddress) {
         SQLiteDatabase db = this.getWritableDatabase();
 
@@ -57,11 +61,14 @@ public class SQLiteManager extends SQLiteOpenHelper {
 
         return db.insert("Location", null, values);
     }
+    // Corresponds to the onDeleteButtonClick function, where it obtains the address from the function
+    // and deletes the table values that hold this address value.
     public int deleteAddressByUserInput(String userEnteredDeleteAddress) {
         SQLiteDatabase db = this.getWritableDatabase();
         return db.delete("Location", "address=?", new String[]{userEnteredDeleteAddress});
     }
-
+    // Corresponds to the onUpdateButtonClick function that will put in the new longitude and latitude values
+    // into the database with the corresponding address value from the user input.
     public int updateAddress(String userEnteredUpdateAddress, double latitude, double longitude) {
         SQLiteDatabase db = this.getWritableDatabase();
 
@@ -71,12 +78,9 @@ public class SQLiteManager extends SQLiteOpenHelper {
 
         return db.update("Location", values, "address LIKE ?", new String[]{userEnteredUpdateAddress});
     }
-    public void clearAllAddresses() {
-        SQLiteDatabase db = this.getWritableDatabase();
-        db.delete("Location", null, null);
-        db.close();
-    }
 
+    // Error checking to ensure that the database does not constantly keep inputting the values
+    // from the coordinates.txt file.
     public long getTableCount(){
         SQLiteDatabase db = this.getReadableDatabase();
         long count = DatabaseUtils.queryNumEntries(db, "Location");
