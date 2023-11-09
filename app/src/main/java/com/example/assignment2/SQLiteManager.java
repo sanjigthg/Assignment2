@@ -3,6 +3,7 @@ package com.example.assignment2;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
+import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
@@ -53,6 +54,7 @@ public class SQLiteManager extends SQLiteOpenHelper {
         ContentValues values = new ContentValues();
         values.put("address", userEnteredAddress);
 
+
         return db.insert("Location", null, values);
     }
     public int deleteAddressByUserInput(String userEnteredDeleteAddress) {
@@ -67,6 +69,18 @@ public class SQLiteManager extends SQLiteOpenHelper {
         values.put("latitude", latitude);
         values.put("longitude", longitude);
 
-        return db.update("Location", values, "address=?", new String[]{userEnteredUpdateAddress});
+        return db.update("Location", values, "address LIKE ?", new String[]{userEnteredUpdateAddress});
+    }
+    public void clearAllAddresses() {
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.delete("Location", null, null);
+        db.close();
+    }
+
+    public long getTableCount(){
+        SQLiteDatabase db = this.getReadableDatabase();
+        long count = DatabaseUtils.queryNumEntries(db, "Location");
+        db.close();
+        return count;
     }
 }

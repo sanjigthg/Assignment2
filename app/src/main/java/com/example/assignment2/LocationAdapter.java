@@ -31,9 +31,9 @@ public class LocationAdapter extends ArrayAdapter<String> {
 
         if (entry != null) {
             String[] inputSplit = entry.split(", ");
-            if (inputSplit.length >= 4) {
+            if (inputSplit.length >= 2) {
                 String address = inputSplit[0];
-                String latLng = inputSplit[4] + " " + inputSplit[5];
+                String latLng = inputSplit[1] + " " + inputSplit[2];
                 addressTextView.setText(address);
                 latLngTextView.setText(latLng);
             }

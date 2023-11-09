@@ -35,19 +35,19 @@ public class MainActivity extends AppCompatActivity {
     private ListView listView;
     private TextView textView;
 
-    private static final String PREFS_NAME = "MyPrefsFile";
-    private static final String DATA_INSERTED_KEY = "data_inserted";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
         sqLiteManager = new SQLiteManager(this);
         addressInput = findViewById(R.id.addressInput);
         listView = findViewById(R.id.database_values_list);
         textView = findViewById(R.id.locationResult);
+
         try {
-            readAndInsertDataFromAssets();
+            if (sqLiteManager.getTableCount() == 0) {
+                readAndInsertDataFromAssets();
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -74,9 +74,6 @@ public class MainActivity extends AppCompatActivity {
         return addressValue;
     }
     private void readAndInsertDataFromAssets () throws IOException {
-        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-
-        if (!prefs.getBoolean(DATA_INSERTED_KEY, false)) {
             AssetManager assetManager = getAssets();
             InputStream inputStream = assetManager.open("coordinates.txt");
 
@@ -85,28 +82,24 @@ public class MainActivity extends AppCompatActivity {
 
             String input;
             while ((input = bufferedReader.readLine()) != null) {
-                String[] inputSplit = input.split(", ");
-                if (inputSplit.length >= 3) {
-
+                String[] inputSplit = input.split(",");
+                if (inputSplit.length >= 2) {
                     double latitude = Double.parseDouble(inputSplit[0].trim());
                     double longitude = Double.parseDouble((inputSplit[1].trim()));
 
                     String geocodedAddress = getAddressFromCoordinates(this, latitude, longitude);
-
+                    String[] geocodedAddressNeed = geocodedAddress.split(",");
                     ContentValues contentValues = new ContentValues();
+                    contentValues.put("address", geocodedAddressNeed[0]);
                     contentValues.put("latitude", latitude);
                     contentValues.put("longitude", longitude);
 
                     db.insert("Location", null, contentValues);
                 }
             }
-            SharedPreferences.Editor editor = prefs.edit();
-            editor.putBoolean(DATA_INSERTED_KEY, true);
-            editor.apply();
             db.close();
             bufferedReader.close();
         }
-    }
 
     @SuppressLint("SetTextI18n")
     public void onSearchButtonClick(View view) {
@@ -129,6 +122,7 @@ public class MainActivity extends AppCompatActivity {
         } else {
             Toast.makeText(this, "Please enter an address.", Toast.LENGTH_SHORT).show();
         }
+        displayDatabaseValues();
     }
 
     private void displayDatabaseValues() {
@@ -169,6 +163,7 @@ public class MainActivity extends AppCompatActivity {
         } else {
             Toast.makeText(this, "Please enter an address.", Toast.LENGTH_SHORT).show();
         }
+        displayDatabaseValues();
     }
 
     public void onDeleteButtonClick(View view) {
@@ -185,6 +180,7 @@ public class MainActivity extends AppCompatActivity {
         } else {
             Toast.makeText(this, "Please enter an address to delete.", Toast.LENGTH_SHORT).show();
         }
+        displayDatabaseValues();
     }
 
     public void onUpdateButtonClick(View view) {
@@ -217,5 +213,10 @@ public class MainActivity extends AppCompatActivity {
         } else {
             Toast.makeText(this, "Please enter an address to update.", Toast.LENGTH_SHORT).show();
         }
+        displayDatabaseValues();
     }
+    // Nuke db cause I was mad
+   /* public void nukeDB(View view) {
+        sqLiteManager.clearAllAddresses();
+    }*/
 }
