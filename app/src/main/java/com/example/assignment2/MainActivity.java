@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.annotation.SuppressLint;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.res.AssetManager;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -14,8 +15,10 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.BufferedReader;
@@ -30,6 +33,10 @@ public class MainActivity extends AppCompatActivity {
     private SQLiteManager sqLiteManager;
     private EditText addressInput;
     private ListView listView;
+    private TextView textView;
+
+    private static final String PREFS_NAME = "MyPrefsFile";
+    private static final String DATA_INSERTED_KEY = "data_inserted";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -38,7 +45,7 @@ public class MainActivity extends AppCompatActivity {
         sqLiteManager = new SQLiteManager(this);
         addressInput = findViewById(R.id.addressInput);
         listView = findViewById(R.id.database_values_list);
-
+        textView = findViewById(R.id.locationResult);
         try {
             readAndInsertDataFromAssets();
         } catch (IOException e) {
@@ -57,9 +64,9 @@ public class MainActivity extends AppCompatActivity {
                 Address address = addresses.get(0);
                 StringBuilder stringBuilder = new StringBuilder();
                 for (int i = 0; i <= address.getMaxAddressLineIndex(); i++) {
-                    stringBuilder.append(address.getAddressLine(i)).append("\n");
+                    stringBuilder.append(address.getAddressLine(i)).append(", ");
                 }
-                addressValue = stringBuilder.toString();
+                addressValue = stringBuilder.toString().trim();
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -67,56 +74,60 @@ public class MainActivity extends AppCompatActivity {
         return addressValue;
     }
     private void readAndInsertDataFromAssets () throws IOException {
-        AssetManager assetManager = getAssets();
-        InputStream inputStream = assetManager.open("coordinates.txt");
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
 
-        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
-        SQLiteDatabase db = sqLiteManager.getWritableDatabase();
+        if (!prefs.getBoolean(DATA_INSERTED_KEY, false)) {
+            AssetManager assetManager = getAssets();
+            InputStream inputStream = assetManager.open("coordinates.txt");
 
-        String input;
-        while ((input = bufferedReader.readLine()) != null) {
-            String[] inputSplit = input.split(",");
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+            SQLiteDatabase db = sqLiteManager.getWritableDatabase();
 
-            //String address = inputSplit[0].trim();
-            double latitude = Double.parseDouble(inputSplit[0].trim());
-            double longitude = Double.parseDouble((inputSplit[1].trim()));
+            String input;
+            while ((input = bufferedReader.readLine()) != null) {
+                String[] inputSplit = input.split(", ");
+                if (inputSplit.length >= 3) {
 
-            String geocodedAddress = getAddressFromCoordinates(this, latitude, longitude);
+                    double latitude = Double.parseDouble(inputSplit[0].trim());
+                    double longitude = Double.parseDouble((inputSplit[1].trim()));
 
-            ContentValues contentValues = new ContentValues();
-            //contentValues.put("address", geocodedAddress);
-            contentValues.put("latitude", latitude);
-            contentValues.put("longitude", longitude);
+                    String geocodedAddress = getAddressFromCoordinates(this, latitude, longitude);
 
-            long newRowId = db.insert("Location", null, contentValues);
+                    ContentValues contentValues = new ContentValues();
+                    contentValues.put("latitude", latitude);
+                    contentValues.put("longitude", longitude);
+
+                    db.insert("Location", null, contentValues);
+                }
+            }
+            SharedPreferences.Editor editor = prefs.edit();
+            editor.putBoolean(DATA_INSERTED_KEY, true);
+            editor.apply();
+            db.close();
+            bufferedReader.close();
         }
-        db.close();
-        bufferedReader.close();
     }
 
+    @SuppressLint("SetTextI18n")
     public void onSearchButtonClick(View view) {
         String userEnteredAddress = addressInput.getText().toString().trim();
-
         if (!userEnteredAddress.isEmpty()) {
-            searchForAddress(userEnteredAddress);
+            Cursor cursor = sqLiteManager.getLatLongForAddress(userEnteredAddress);
+
+            if (cursor != null && cursor.moveToFirst()) {
+                 double latitude = cursor.getDouble(cursor.getColumnIndex("latitude"));
+                 double longitude = cursor.getDouble(cursor.getColumnIndex("longitude"));
+
+                String result = "Latitude: " + latitude + " Longitude: " + longitude;
+                textView.setText(result);
+            } else {
+                textView.setText("Address not found in database.");
+            }
+            if (cursor != null) {
+                cursor.close();
+            }
         } else {
             Toast.makeText(this, "Please enter an address.", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    private void searchForAddress(String address) {
-        Cursor cursor = sqLiteManager.getLatLongForAddress(address);
-
-        if (cursor != null && cursor.moveToFirst()) {
-            @SuppressLint("Range") double latitude = cursor.getDouble(cursor.getColumnIndex("latitude"));
-            @SuppressLint("Range") double longitude = cursor.getDouble(cursor.getColumnIndex("longitude"));
-            Log.d("LatLng", "Latitude: " + latitude + ", Longitude: " + longitude);
-        } else {
-            Log.d("LatLng", "Address not found in database.");
-        }
-
-        if (cursor != null) {
-            cursor.close();
         }
     }
 
@@ -128,9 +139,9 @@ public class MainActivity extends AppCompatActivity {
 
         if (cursor != null && cursor.moveToFirst()) {
             do {
-                @SuppressLint("Range") String address = cursor.getString(cursor.getColumnIndex("address"));
-                @SuppressLint("Range") double latitude = cursor.getDouble(cursor.getColumnIndex("latitude"));
-                @SuppressLint("Range") double longitude = cursor.getDouble(cursor.getColumnIndex("longitude"));
+                String address = cursor.getString(cursor.getColumnIndex("address"));
+                double latitude = cursor.getDouble(cursor.getColumnIndex("latitude"));
+                double longitude = cursor.getDouble(cursor.getColumnIndex("longitude"));
 
                 String entry = "Address: " + address + ", Latitude: " + latitude + ", Longitude: " + longitude;
                 databaseValues.add(entry);
@@ -138,8 +149,73 @@ public class MainActivity extends AppCompatActivity {
 
             cursor.close();
         }
+        LocationAdapter locationAdapter = new LocationAdapter(this, databaseValues);
+        listView.setAdapter(locationAdapter);
+    }
 
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, databaseValues);
-        listView.setAdapter(adapter);
+    public void onAddAddressButtonClick(View view) {
+        String userEnteredAddress = addressInput.getText().toString().trim();
+
+        if (!userEnteredAddress.isEmpty()) {
+
+            long newRowId = sqLiteManager.addAddress(userEnteredAddress);
+            String result = "Address has been added into database.";
+            if (newRowId != -1) {
+                Toast.makeText(this, "Address added with ID: " + newRowId, Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, "Failed to add address.", Toast.LENGTH_SHORT).show();
+            }
+            textView.setText(result);
+        } else {
+            Toast.makeText(this, "Please enter an address.", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    public void onDeleteButtonClick(View view) {
+        String userEnteredDeleteAddress = addressInput.getText().toString().trim();
+
+        if (Geocoder.isPresent()) {
+            int deletedRows = sqLiteManager.deleteAddressByUserInput(userEnteredDeleteAddress);
+
+            if (deletedRows > 0) {
+                Toast.makeText(this, "Address deleted.", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, "Failed to delete address.", Toast.LENGTH_SHORT).show();
+            }
+        } else {
+            Toast.makeText(this, "Please enter an address to delete.", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    public void onUpdateButtonClick(View view) {
+        String userEnteredUpdateAddress = addressInput.getText().toString().trim();
+
+        if (Geocoder.isPresent()) {
+            double latitude = 0.0;
+            double longitude = 0.0;
+            Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+            try {
+                List<Address> addresses = geocoder.getFromLocationName(userEnteredUpdateAddress, 1);
+                if (addresses != null && !addresses.isEmpty()) {
+                    latitude = addresses.get(0).getLatitude();
+                    longitude = addresses.get(0).getLongitude();
+
+                    // Update the address with latitude and longitude in the database
+                    int updatedRows = sqLiteManager.updateAddress(userEnteredUpdateAddress, latitude, longitude);
+
+                    if (updatedRows > 0) {
+                        Toast.makeText(this, "Address updated.", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(this, "Failed to update address.", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    Toast.makeText(this, "Could not find coordinates for the updated address.", Toast.LENGTH_SHORT).show();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } else {
+            Toast.makeText(this, "Please enter an address to update.", Toast.LENGTH_SHORT).show();
+        }
     }
 }

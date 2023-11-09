@@ -2,4 +2,8 @@
     <string name="app_name">Assignment2</string>
     <string name="get_address">Get Address</string>
     <string name="address">Address</string>
+    <string name="add_address">Add Address</string>
+    <string name="delete">DELETE</string>
+    <string name="obtain_lat_long">Obtain Lat + Long</string>
+    <string name="update">UPDATE</string>
 </resources>

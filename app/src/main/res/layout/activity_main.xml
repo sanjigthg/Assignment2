@@ -12,6 +12,8 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="100dp"
         android:layout_marginTop="72dp"
+        android:selectAllOnFocus="true"
+        android:autofillHints="Address"
         android:ems="10"
         android:hint="@string/address"
         android:inputType="text"
@@ -30,20 +32,55 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/addressInput" />
 
+    <Button
+        android:id="@+id/addAddress"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="12dp"
+        android:backgroundTint="@color/teal_700"
+        android:onClick="onAddAddressButtonClick"
+        android:text="@string/add_address"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/obtainLocation" />
+
+    <Button
+        android:id="@+id/deleteAddress"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="17dp"
+        android:layout_marginTop="12dp"
+        android:backgroundTint="@color/Red"
+        android:onClick="onDeleteButtonClick"
+        android:text="@string/delete"
+        app:layout_constraintStart_toEndOf="@+id/addAddress"
+        app:layout_constraintTop_toBottomOf="@+id/obtainLocation" />
+
+    <Button
+        android:id="@+id/updateAddress"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="21dp"
+        android:layout_marginTop="100dp"
+        android:onClick="onUpdateButtonClick"
+        android:text="@string/update"
+        app:layout_constraintStart_toEndOf="@+id/deleteAddress"
+        app:layout_constraintTop_toBottomOf="@+id/addressInput" />
+
     <TextView
         android:id="@+id/locationResult"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="176dp"
-        android:layout_marginTop="76dp"
-        android:text="TextView"
+        android:layout_marginStart="80dp"
+        android:layout_marginTop="12dp"
+        android:text=""
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/obtainLocation" />
+        app:layout_constraintTop_toBottomOf="@+id/addressInput" />
 
     <ListView
         android:id="@+id/database_values_list"
-        android:layout_width="wrap_content"
-        android:layout_height="509dp"
+        android:layout_width="414dp"
+        android:layout_height="344dp"
         app:layout_constraintBottom_toBottomOf="parent"
         tools:layout_editor_absoluteX="0dp" />
 

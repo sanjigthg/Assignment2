@@ -1,5 +1,6 @@
 package com.example.assignment2;
 
+import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -13,7 +14,6 @@ public class SQLiteManager extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "locationDB";
     private static final int DATABASE_VERSION = 1;
     private static final String TABLE_NAME = "Location";
-    private static final String COUNTER = "Counter";
     private static final String ID_FIELD = "id";
     private static final String ADDRESS_FIELD = "address";
     private static final String LAT_FIELD = "latitude";
@@ -37,14 +37,36 @@ public class SQLiteManager extends SQLiteOpenHelper {
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
 
     }
-
     public Cursor getLatLongForAddress(String address) {
         SQLiteDatabase db = this.getReadableDatabase();
 
         String[] projection = {"latitude", "longitude"};
-        String selection = "address=?";
-        String[] selectionArgs = {address};
+        String selection = "address LIKE ?";
+        String[] selectionArgs = {"%" + address + "%"};
 
-        return db.query("my_table", projection, selection, selectionArgs, null, null, null);
+        return db.query("Location", projection, selection, selectionArgs, null, null, null);
+    }
+
+    public long addAddress(String userEnteredAddress) {
+        SQLiteDatabase db = this.getWritableDatabase();
+
+        ContentValues values = new ContentValues();
+        values.put("address", userEnteredAddress);
+
+        return db.insert("Location", null, values);
+    }
+    public int deleteAddressByUserInput(String userEnteredDeleteAddress) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        return db.delete("Location", "address=?", new String[]{userEnteredDeleteAddress});
+    }
+
+    public int updateAddress(String userEnteredUpdateAddress, double latitude, double longitude) {
+        SQLiteDatabase db = this.getWritableDatabase();
+
+        ContentValues values = new ContentValues();
+        values.put("latitude", latitude);
+        values.put("longitude", longitude);
+
+        return db.update("Location", values, "address=?", new String[]{userEnteredUpdateAddress});
     }
 }
